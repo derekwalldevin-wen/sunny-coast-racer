@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#081a2f" />
+    <meta name="description" content="Sunny Coast Racer — 原创程序化 3D 海滨街机竞速" />
+    <title>Sunny Coast Racer · 晴潮竞速</title>
+  </head>
+  <body>
+    <main id="game-shell" aria-label="Sunny Coast Racer 游戏区域">
+      <div id="scene-root"></div>
+      <div id="vignette" aria-hidden="true"></div>
+      <div id="impact-flash" aria-hidden="true"></div>
+      <div id="speed-lines" aria-hidden="true"></div>
+
+      <section id="hud" aria-live="polite">
+        <header class="hud-top">
+          <div class="brand-lockup">
+            <span class="brand-kicker">COASTAL ARCADE / 01</span>
+            <h1>晴潮<span>竞速</span></h1>
+            <div class="brand-sub">SUNNY COAST RACER</div>
+          </div>
+          <div class="race-status glass-panel">
+            <div class="status-block">
+              <span class="status-label">实时名次</span>
+              <strong id="position-value">1<span>/6</span></strong>
+            </div>
+            <div class="status-divider"></div>
+            <div class="status-block">
+              <span class="status-label">当前圈</span>
+              <strong id="lap-value">1<span>/3</span></strong>
+            </div>
+            <div class="status-divider"></div>
+            <div class="status-block time-block">
+              <span class="status-label">总时间</span>
+              <strong id="total-time">00:00.000</strong>
+            </div>
+          </div>
+          <div class="top-actions">
+            <button id="mute-button" class="icon-button" type="button" aria-label="静音切换" title="静音切换 (M)">
+              <span class="sound-bars"><i></i><i></i><i></i></span>
+              <span id="mute-label">声音</span>
+            </button>
+            <button id="pause-button" class="icon-button" type="button" aria-label="暂停游戏" title="暂停 (P)">Ⅱ</button>
+          </div>
+        </header>
+
+        <div class="hud-left">
+          <div class="mini-label"><span class="pulse-dot"></span> 海湾赛道 / 实时</div>
+          <div class="track-name">环岛北线 <small>COASTAL LOOP / NORTH SHORE</small></div>
+          <div class="checkpoint-progress">
+            <div class="checkpoint-head"><span>检查点</span><b id="checkpoint-value">0 / 5</b></div>
+            <div class="checkpoint-track"><i id="checkpoint-fill"></i></div>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <div class="mini-map-card glass-panel">
+            <div class="card-caption"><span>赛道导航</span><b id="camera-label">追尾镜头</b></div>
+            <canvas id="minimap" width="240" height="154" aria-label="赛道小地图"></canvas>
+            <div class="map-legend"><span><i class="dot player-dot"></i>你</span><span><i class="dot ai-dot"></i>AI</span><span><i class="dot gate-dot"></i>门</span></div>
+          </div>
+        </div>
+
+        <div class="hud-bottom-left">
+          <div class="speed-card glass-panel">
+            <div id="speed-dial" class="speed-dial" style="--speed-progress: 0deg">
+              <div class="dial-inner">
+                <span class="speed-unit">KM/H</span>
+                <strong id="speed-value">000</strong>
+                <span id="gear-value">N</span>
+              </div>
+            </div>
+            <div class="speed-meta">
+              <div class="metric"><span>最佳圈</span><b id="best-time">--:--.---</b></div>
+              <div class="metric"><span>本圈</span><b id="current-time">00:00.000</b></div>
+              <div class="metric"><span>状态</span><b id="drive-state">待命</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-bottom-center">
+          <div class="nitro-wrap">
+            <div class="nitro-head"><span>氮气储量</span><b id="nitro-value">68%</b></div>
+            <div class="nitro-bar"><i id="nitro-fill"></i><span class="nitro-shine"></span></div>
+            <div class="nitro-hint">CTRL 氮气 · SHIFT 集气</div>
+          </div>
+          <div id="boost-message" class="boost-message" aria-live="assertive">
+            <span class="boost-cn">普通喷</span><small>BOOST READY</small>
+          </div>
+          <div id="drift-hud" class="drift-hud">
+            <div class="drift-title"><span class="drift-flare">✦</span><b id="drift-label">漂移集气</b><span id="drift-charge">0%</span></div>
+            <div class="drift-bar"><i id="drift-fill"></i></div>
+            <div class="drift-sequence"><span class="seq active">1</span><b>→</b><span class="seq">2</span><b>→</b><span class="seq">断位</span></div>
+          </div>
+        </div>
+
+        <div class="hud-bottom-right">
+          <div class="leaderboard glass-panel">
+            <div class="card-caption"><span>车手排名</span><b id="race-state-label">COUNTDOWN</b></div>
+            <ol id="leaderboard-list"></ol>
+          </div>
+          <div class="control-hint">
+            <span><kbd>WASD</kbd> 驾驶</span><span><kbd>SPACE</kbd> 漂移</span><span><kbd>SHIFT</kbd> 集气</span><span><kbd>CTRL</kbd> 氮气</span><span><kbd>C</kbd> 镜头</span><span><kbd>R</kbd> 重赛</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="countdown-overlay" class="center-overlay" hidden>
+        <div class="countdown-kicker">SUNNY COAST RACER</div>
+        <div id="countdown-value">3</div>
+        <div id="countdown-caption">准备发车</div>
+      </section>
+
+      <section id="start-overlay" class="modal-overlay">
+        <div class="start-card">
+          <div class="start-tag">TIDAL RUN / VOL. 01</div>
+          <h2>追着海风<br /><em>冲过晴潮</em></h2>
+          <div class="start-scripture">Drive<br /><em>the Sunshine</em></div>
+          <p>在原创海崖闭环赛道上收集气流、释放喷气，与五位 AI 车手争抢三圈冠军。</p>
+          <div class="start-manifesto">SPEED / COAST / FREEDOM</div>
+          <div class="start-controls">
+            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 驾驶</span>
+            <span><kbd>SPACE</kbd> 漂移</span>
+            <span><kbd>SHIFT</kbd> 集气释放</span>
+            <span><kbd>CTRL</kbd> 氮气</span>
+          </div>
+          <button id="start-button" class="primary-button" type="button"><span>进入三圈冲刺</span><b>ENTER ↵</b></button>
+          <div class="start-foot"><span>原创程序化海岸 · 程序化音效</span><span id="audio-status">点击后开启合成音效</span></div>
+        </div>
+      </section>
+
+      <section id="pause-overlay" class="modal-overlay" hidden>
+        <div class="pause-card">
+          <div class="pause-icon">Ⅱ</div>
+          <div class="start-tag">RACE CONTROL</div>
+          <h2>比赛已暂停</h2>
+          <p>海风在等你。按 <kbd>P</kbd> 或点击下方按钮继续。</p>
+          <button id="resume-button" class="primary-button" type="button"><span>继续比赛</span><b>P ↵</b></button>
+          <button id="pause-restart-button" class="ghost-button" type="button">重新开始三圈</button>
+        </div>
+      </section>
+
+      <section id="results-overlay" class="modal-overlay" hidden>
+        <div class="results-card">
+          <div class="start-tag">RACE COMPLETE / FINAL CLASSIFICATION</div>
+          <h2 id="result-title">冲线！</h2>
+          <div id="result-position" class="result-position">P1</div>
+          <p id="result-summary">漂亮的海岸线冲刺。</p>
+          <div class="result-times"><div><span>总时间</span><b id="result-total">00:00.000</b></div><div><span>最佳圈</span><b id="result-best">--:--.---</b></div></div>
+          <ol id="result-list" class="result-list"></ol>
+          <button id="restart-button" class="primary-button" type="button"><span>再来一场</span><b>R ↵</b></button>
+        </div>
+      </section>
+
+      <section id="webgl-error" class="fatal-panel" hidden>
+        <div class="fatal-icon">!</div>
+        <h2>无法启动 3D 引擎</h2>
+        <p>当前浏览器没有可用的 WebGL。请更新浏览器或开启硬件加速后重试。</p>
+        <button id="retry-button" class="ghost-button" type="button">重新载入</button>
+      </section>
+
+      <div id="narrow-notice" class="narrow-notice" hidden>
+        <strong>建议横屏体验</strong><span>窄屏可继续观看，使用下方触控按钮驾驶。</span>
+      </div>
+
+      <div id="touch-controls" aria-label="触控驾驶按钮">
+        <div class="touch-cluster left-cluster"><button data-key="KeyA" type="button">◀</button><button data-key="KeyD" type="button">▶</button></div>
+        <div class="touch-cluster right-cluster"><button data-key="KeyW" type="button">▲</button><button data-key="KeyS" type="button">▼</button><button data-key="Space" type="button">漂</button><button data-key="ShiftLeft" type="button">喷</button><button data-key="ControlLeft" type="button">氮</button></div>
+      </div>
+
+      <div class="corner-signature">SC / 26 <span>PROCEDURAL COASTLINE</span></div>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
